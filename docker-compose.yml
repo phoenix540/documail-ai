@@ -1,0 +1,70 @@
+x-backend: &backend
+  build: ./backend
+  environment: &backend-env
+    DATABASE_URL: postgresql+psycopg2://documail:documail@postgres:5432/documail
+    REDIS_URL: redis://redis:6379/0
+    JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+    OLLAMA_URL: http://ollama:11434
+    OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+    SMTP_HOST: ${SMTP_HOST:-mailhog}
+    SMTP_PORT: ${SMTP_PORT:-1025}
+    SMTP_USER: ${SMTP_USER:-}
+    SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    SMTP_FROM: ${SMTP_FROM:-DocuMail AI <no-reply@documail.local>}
+    CHROMA_PATH: /data/chroma
+    ANONYMIZED_TELEMETRY: "False"
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis: { condition: service_started }
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: documail, POSTGRES_PASSWORD: documail, POSTGRES_DB: documail }
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U documail"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes: [ollama:/root/.ollama]
+    ports: ["11434:11434"]
+    # GPU (optional): see README, add a `deploy.resources.reservations.devices` block
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    depends_on: [ollama]
+    environment: { OLLAMA_HOST: "http://ollama:11434" }
+    entrypoint: ["/bin/sh", "-c", "sleep 5 && ollama pull ${OLLAMA_MODEL:-llama3.2:3b}"]
+    restart: "no"
+
+  mailhog:
+    image: mailhog/mailhog
+    ports: ["8025:8025"]   # inbox UI: http://localhost:8025
+
+  api:
+    <<: *backend
+    ports: ["8000:8000"]
+    volumes: [chroma:/data/chroma]
+
+  worker:
+    <<: *backend
+    command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=4
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes: [./frontend:/app]
+    command: sh -c "npm install && npm run build && npm run preview -- --host --port 5173"
+    ports: ["5173:5173"]
+    depends_on: [api]
+
+volumes:
+  pgdata:
+  ollama:
+  chroma:
