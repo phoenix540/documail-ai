@@ -2,6 +2,16 @@
 
 A document-grounded assistant: upload PDF/DOCX files, ask questions answered by a **local open-source LLM (Ollama)** with cited passages (**RAG**), and have the assistant **draft and send emails to many recipients** through a **Redis + Celery** queue. Built as a small-scale version of the PFE subject "Chatbot intelligent basé sur un LLM open source : RAG, Machine Learning et mailing".
 
+## Screenshots
+
+| Chat with cited passages | Email draft and confirmation |
+|---|---|
+| ![Chat](docs/chat.png) | ![Sources](docs/send_mail.png) |
+
+| Activity dashboard | Delivered email (MailHog) |
+|---|---|
+| ![Activity](docs/activity.png) | ![Mail](docs/mail.png) |
+
 ## Architecture
 
 ```
