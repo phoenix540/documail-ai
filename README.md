@@ -8,7 +8,7 @@ A document-grounded assistant: upload PDF/DOCX files, ask questions answered by 
 |---|---|
 | ![Chat](docs/chat.png) | ![Sources](docs/send_mail.png) |
 
-| Activity dashboard | Delivered email (MailHog) |
+| Activity dashboard | Delivered email |
 |---|---|
 | ![Activity](docs/activity.png) | ![Mail](docs/mail.png) |
 
